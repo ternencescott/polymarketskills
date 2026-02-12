@@ -9,36 +9,40 @@ async function getOrderbook(tokenId: string): Promise<void> {
 
     const orderbook = await client.getOrderBook(tokenId);
 
-    console.log("--- 买单 (Bids) ---");
-    if (orderbook.bids && orderbook.bids.length > 0) {
+    // 排序：Bids 从高到低（最高买价在盘口），Asks 从低到高（最低卖价在盘口）
+    const sortedBids = [...(orderbook.bids || [])].sort((a: any, b: any) => parseFloat(b.price) - parseFloat(a.price));
+    const sortedAsks = [...(orderbook.asks || [])].sort((a: any, b: any) => parseFloat(a.price) - parseFloat(b.price));
+
+    console.log("--- 买单 (Bids) · 从高到低 ---");
+    if (sortedBids.length > 0) {
         console.log("价格\t\t数量");
-        orderbook.bids.slice(0, 10).forEach((bid: any) => {
+        sortedBids.slice(0, 10).forEach((bid: any) => {
             console.log(`$${bid.price}\t\t${bid.size}`);
         });
-        if (orderbook.bids.length > 10) {
-            console.log(`... 还有 ${orderbook.bids.length - 10} 条`);
+        if (sortedBids.length > 10) {
+            console.log(`... 还有 ${sortedBids.length - 10} 条`);
         }
     } else {
         console.log("无买单");
     }
 
-    console.log("\n--- 卖单 (Asks) ---");
-    if (orderbook.asks && orderbook.asks.length > 0) {
+    console.log("\n--- 卖单 (Asks) · 从低到高 ---");
+    if (sortedAsks.length > 0) {
         console.log("价格\t\t数量");
-        orderbook.asks.slice(0, 10).forEach((ask: any) => {
+        sortedAsks.slice(0, 10).forEach((ask: any) => {
             console.log(`$${ask.price}\t\t${ask.size}`);
         });
-        if (orderbook.asks.length > 10) {
-            console.log(`... 还有 ${orderbook.asks.length - 10} 条`);
+        if (sortedAsks.length > 10) {
+            console.log(`... 还有 ${sortedAsks.length - 10} 条`);
         }
     } else {
         console.log("无卖单");
     }
 
     // 计算市场摘要
-    if (orderbook.bids?.length > 0 && orderbook.asks?.length > 0) {
-        const bestBid = parseFloat(orderbook.bids[0].price);
-        const bestAsk = parseFloat(orderbook.asks[0].price);
+    if (sortedBids.length > 0 && sortedAsks.length > 0) {
+        const bestBid = parseFloat(sortedBids[0].price);
+        const bestAsk = parseFloat(sortedAsks[0].price);
         const spread = bestAsk - bestBid;
         const midPrice = (bestBid + bestAsk) / 2;
 

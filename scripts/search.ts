@@ -214,7 +214,15 @@ async function searchMarkets(
             console.log(`   Markets: ${event.markets?.length ?? 0}`);
 
             if (expand && event.markets) {
-                for (const market of event.markets) {
+                const showClosed = params.keep_closed_markets === 1;
+                const visibleMarkets = showClosed
+                    ? event.markets
+                    : event.markets.filter((m: any) => !m.closed);
+                const hiddenCount = event.markets.length - visibleMarkets.length;
+                if (hiddenCount > 0) {
+                    console.log(`   (已隐藏 ${hiddenCount} 个已关闭的子市场，使用 --closed 查看)`);
+                }
+                for (const market of visibleMarkets) {
                     const outcomes = market.outcomes ? JSON.parse(market.outcomes) : [];
                     const prices = market.outcomePrices ? JSON.parse(market.outcomePrices) : [];
 

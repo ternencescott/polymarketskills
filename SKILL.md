@@ -60,6 +60,8 @@ Use this file to discover all available pages before exploring further.
 
 ```bash
 bun run scripts/check-balance.ts                        # 检查余额
+bun run scripts/list-tags.ts [--limit <n>] [--json]     # 列出标签/分类
+bun run scripts/list-events.ts [options]                # 浏览事件列表（见下方详解）
 bun run scripts/search.ts <keyword> [options]               # 搜索市场（见下方详解）
 bun run scripts/getTokenId.ts <event_url|slug>               # 获取 tokenId
 bun run scripts/getMarketDetail.ts <market_id>               # 获取 Market 详情
@@ -73,10 +75,6 @@ bun run scripts/token-balance.ts <token_id>             # 查看持仓
 bun run scripts/cancel-orders.ts --order <ID> | --market <ID>
 ```
 
-## 配置说明 (`scripts/config.ts`)
-
-- 鉴权：`createOrDeriveApiKey()` 自动派生 API 凭证，无需手动管理
-- ethers v6 用于链上交互；`@ethersproject/wallet` v5 用于 ClobClient 签名（SDK 硬依赖），两者共存无冲突
 
 ## 脚本用法详解
 
@@ -84,9 +82,48 @@ bun run scripts/cancel-orders.ts --order <ID> | --market <ID>
 
 查询 FUNDER_ADDRESS 的 USDC.e 链上余额（合约 `0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174`）和 CLOB 内部余额。
 
-### 2. 搜索市场 — `search.ts <keyword> [options]`
+### 2. 列出标签 — `list-tags.ts [options]`
 
-调用 `GET https://gamma-api.polymarket.com/public-search`。
+| 参数 | 说明 |
+|------|------|
+| `--limit <n>` | 返回数量 |
+| `--json` | 输出原始 JSON |
+
+**示例：**
+- `bun run scripts/list-tags.ts` — 列出所有标签
+- `bun run scripts/list-tags.ts --limit 20` — 返回 20 个标签
+
+输出每个标签的 label、slug、id。可将 slug 传给 `list-events.ts --tag-slug <slug>` 按分类浏览事件。
+
+### 3. 浏览事件 — `list-events.ts [options]`
+
+默认返回 10 条活跃事件，输出精简信息（title、slug、status、volume、markets 数量、negRisk）。
+
+**命令行参数：**
+
+| 参数 | 说明 |
+|------|------|
+| `--limit <n>` | 返回数量（默认 10） |
+| `--offset <n>` | 跳过前 n 条（分页用） |
+| `--order <field>` | 排序字段：`volume`、`liquidity`、`startDate`、`endDate`、`createdAt` 等 |
+| `--asc` / `--desc` | 升序/降序（默认降序） |
+| `--tag-slug <slug>` | 按标签 slug 过滤（如 `crypto`、`politics`、`sports`） |
+| `--tag-id <id>` | 按标签 ID 过滤 |
+| `--active` | 仅活跃事件（默认） |
+| `--closed` | 仅已结束事件 |
+| `--all` | 所有状态（含已结束） |
+| `--featured` | 仅精选事件 |
+| `--json` | 输出原始 JSON |
+
+**示例：**
+- `bun run scripts/list-events.ts` — 默认列出 10 条活跃事件
+- `bun run scripts/list-events.ts --order volume --desc` — 按成交量排序
+- `bun run scripts/list-events.ts --tag-slug crypto --limit 5` — 加密货币分类下前 5 条
+- `bun run scripts/list-events.ts --offset 10 --limit 10` — 第二页
+
+输出的 slug 可用于 `getTokenId.ts <slug>` 下钻获取 tokenId 和市场详情。
+
+### 4. 搜索市场 — `search.ts <keyword> [options]`
 
 **命令行参数：**
 
@@ -99,7 +136,7 @@ bun run scripts/cancel-orders.ts --order <ID> | --market <ID>
 | `--tag <tag>` | 按标签过滤（可多次指定） |
 | `--exclude-tag <id>` | 排除标签 ID（可多次指定） |
 | `--page <n>` | 分页页码 |
-| `--closed` | 保留已关闭的市场 |
+| `--closed` | 展开时保留已结算的子市场（默认隐藏已关闭的子 market，仅显示可交易的） |
 | `--no-tags` | 不搜索标签 |
 | `--no-profiles` | 不搜索用户 |
 | `--recurrence <r>` | Recurrence 过滤 |
@@ -116,29 +153,22 @@ bun run scripts/cancel-orders.ts --order <ID> | --market <ID>
 
 返回：`{ events, tags, profiles, pagination }`
 
-### 3. 获取 tokenId — `getTokenId.ts <event_url|slug>`
+### 5. 获取 tokenId — `getTokenId.ts <event_url|slug>`
 
 从 Event URL 或 slug 解析出 tokenId。示例：
 - `bun run scripts/getTokenId.ts https://polymarket.com/event/bitcoin-up-or-down`
 - `bun run scripts/getTokenId.ts bitcoin-up-or-down`
 
-### 4. 获取 Market 详情 — `getMarketDetail.ts <market_id>`
+### 6. 获取 Market 详情 — `getMarketDetail.ts <market_id>`
 
 通过 Market ID 获取精简详情：question、状态、endDate、description（截断200字）、outcomes/价格、成交量、流动性、bid/ask/spread、tick size、CLOB token IDs、所属 Event 信息。
 
-### 5. 获取价格 — `price-info.ts <token_id>`
+### 7. 获取价格 — `price-info.ts <token_id>`
 
-| 端点 | 含义 |
-|------|------|
-| `GET /price?side=SELL&token_id=<ID>` | ASK（你的买入价） |
-| `GET /price?side=BUY&token_id=<ID>` | BID（你的卖出价） |
-| `GET /midpoint?token_id=<ID>` | 中间价（参考） |
 
-> `side` 指做市商方向：SELL = 你买入，BUY = 你卖出。
+### 8. 历史价格 — `price-history.ts <token_id>`
 
-### 6. 历史价格 — `price-history.ts <token_id>`
-
-调用 `GET /prices-history`，获取指定 token 的历史价格数据。
+获取指定 token 的历史价格数据。
 
 | 参数 | 说明 |
 |------|------|
@@ -154,11 +184,11 @@ bun run scripts/cancel-orders.ts --order <ID> | --market <ID>
 
 输出包含：数据点数量、时间范围、开盘/收盘/最高/最低/变动摘要、价格走势图。
 
-### 7. 订单簿 — `orderbook.ts <token_id>`
+### 9. 订单簿 — `orderbook.ts <token_id>`
 
 获取完整 bids + asks，计算 spread 和中间价。
 
-### 8. 买入 — `buy.ts`
+### 10. 买入 — `buy.ts`
 
 | 订单类型 | `--size` 含义 |
 |----------|---------------|
@@ -167,22 +197,22 @@ bun run scripts/cancel-orders.ts --order <ID> | --market <ID>
 
 最小订单：Market > $1.00，Limit >= 5 shares 且总价值 > $1.00
 
-### 9. 卖出 — `sell.ts`
+### 11. 卖出 — `sell.ts`
 
 | 订单类型 | `--size` 含义 |
 |----------|---------------|
 | `--type market` | 收到的美元金额 |
 | `--type limit` | 卖出的 share 数量 |
 
-### 10. 查看订单 — `check-orders.ts`
+### 12. 查看订单 — `check-orders.ts`
 
 `--token <ID>` 按 token 过滤，`--market <ID|slug|URL>` 按市场过滤（支持 condition ID、event slug、完整 URL，自动解析），无参数查看全部。
 
-### 11. 取消订单 — `cancel-orders.ts`
+### 13. 取消订单 — `cancel-orders.ts`
 
 `--order <ID>` 取消单个，`--market <ID>` 取消某市场全部。
 
-### 12. 查看持仓 — `token-balance.ts <token_id>`
+### 14. 查看持仓 — `token-balance.ts <token_id>`
 
 ## negRisk 说明
 
