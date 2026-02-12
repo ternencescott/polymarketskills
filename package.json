@@ -1,0 +1,23 @@
+{
+  "name": "polymarket-skills",
+  "version": "1.0.0",
+  "description": "Polymarket CLOB trading scripts powered by bun runtime",
+  "scripts": {
+    "check-balance": "bun run scripts/check-balance.ts",
+    "search": "bun run scripts/search.ts",
+    "get-token-id": "bun run scripts/getTokenId.ts",
+    "price-info": "bun run scripts/price-info.ts",
+    "orderbook": "bun run scripts/orderbook.ts",
+    "buy": "bun run scripts/buy.ts",
+    "sell": "bun run scripts/sell.ts",
+    "check-orders": "bun run scripts/check-orders.ts",
+    "cancel-orders": "bun run scripts/cancel-orders.ts",
+    "token-balance": "bun run scripts/token-balance.ts"
+  },
+  "dependencies": {
+    "@ethersproject/wallet": "^5.8.0",
+    "@polymarket/clob-client": "latest",
+    "axios": "^1.7.0",
+    "ethers": "^6.0.0"
+  }
+}
