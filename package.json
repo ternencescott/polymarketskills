@@ -12,7 +12,8 @@
     "sell": "bun run scripts/sell.ts",
     "check-orders": "bun run scripts/check-orders.ts",
     "cancel-orders": "bun run scripts/cancel-orders.ts",
-    "token-balance": "bun run scripts/token-balance.ts"
+    "token-balance": "bun run scripts/token-balance.ts",
+    "price-history": "bun run scripts/price-history.ts"
   },
   "dependencies": {
     "@ethersproject/wallet": "^5.8.0",
