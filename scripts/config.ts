@@ -9,7 +9,7 @@
 //   - ethers v6: 用于链上交互 (JsonRpcProvider, Contract, 签名, Gnosis Safe 等)
 //   - @ethersproject/wallet v5: 仅用于 ClobClient 签名 (SDK 内部硬依赖 v5 Wallet)
 
-import { ClobClient, Side, OrderType, AssetType, TickSize } from "@polymarket/clob-client";
+import { ClobClient, Side, OrderType, AssetType } from "@polymarket/clob-client";
 import { Wallet as Wallet5 } from "@ethersproject/wallet";  // v5 Wallet, 仅给 CLOB SDK 用
 import { ethers } from "ethers";  // v6
 
@@ -49,9 +49,20 @@ const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 const signer = new Wallet5(PRIVATE_KEY);
 
 // 创建已认证的 ClobClient (自动派生 API 凭证)
+// SDK 的 createOrDeriveApiKey() 会先尝试 create (POST)，失败后 fallback 到 derive (GET)。
+// create 失败时 SDK 内部 errorHandling 会无条件 console.error，这里临时屏蔽该噪音。
 async function getClobClient(): Promise<ClobClient> {
-    const creds = await new ClobClient(CLOB_HOST, CHAIN_ID, signer).createOrDeriveApiKey();
-    return new ClobClient(CLOB_HOST, CHAIN_ID, signer, creds, SIGNATURE_TYPE, FUNDER_ADDRESS);
+    const originalError = console.error;
+    console.error = (...args: any[]) => {
+        if (typeof args[0] === "string" && args[0].includes("[CLOB Client] request error")) return;
+        originalError.apply(console, args);
+    };
+    try {
+        const creds = await new ClobClient(CLOB_HOST, CHAIN_ID, signer).createOrDeriveApiKey();
+        return new ClobClient(CLOB_HOST, CHAIN_ID, signer, creds, SIGNATURE_TYPE, FUNDER_ADDRESS);
+    } finally {
+        console.error = originalError;
+    }
 }
 
 export {
@@ -68,6 +79,5 @@ export {
     Side,
     OrderType,
     AssetType,
-    TickSize,
     ethers,
 };

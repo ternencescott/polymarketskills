@@ -5,7 +5,7 @@
 //   MARKET 订单 (--type market): size = 花费的美元金额
 //   LIMIT 订单  (--type limit):  size = 购买的 share 数量
 
-import { getClobClient, AssetType, Side, OrderType, TickSize } from "./config";
+import { getClobClient, AssetType, Side, OrderType } from "./config";
 import { getPriceInfo } from "./price-info";
 
 async function buyOrder(
@@ -44,7 +44,7 @@ async function buyOrder(
         console.log(`\n📤 限价买入: ${size} shares @ $${price}...`);
         response = await client.createAndPostOrder(
             { tokenID, price, size, side: Side.BUY },
-            { tickSize: tickSize as TickSize, negRisk },
+            { tickSize: tickSize as any, negRisk },
             OrderType.GTC,
         );
     }

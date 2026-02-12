@@ -5,7 +5,7 @@
 //   MARKET 订单 (--type market): size = 收到的美元金额
 //   LIMIT 订单  (--type limit):  size = 卖出的 share 数量
 
-import { getClobClient, Side, OrderType, TickSize } from "./config";
+import { getClobClient, Side, OrderType } from "./config";
 import { getPriceInfo } from "./price-info";
 
 async function sellOrder(
@@ -32,7 +32,7 @@ async function sellOrder(
         console.log(`\n📤 限价卖出: ${size} shares @ $${price}...`);
         response = await client.createAndPostOrder(
             { tokenID, price, size, side: Side.SELL },
-            { tickSize: tickSize as TickSize, negRisk },
+            { tickSize: tickSize as any, negRisk },
             OrderType.GTC,
         );
     }
