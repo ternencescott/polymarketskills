@@ -1,13 +1,16 @@
 // 检查余额
 // 用法: bun run scripts/check-balance.ts
 
-import { getClobClient, provider, wallet, FUNDER_ADDRESS, USDC_E_ADDRESS, AssetType, ethers } from "./config";
+import { getClobClient, provider,USDC_E_ADDRESS, AssetType, ethers } from "./config";
 
 const USDC_E_ABI = [
     "function balanceOf(address) view returns (uint256)",
 ];
 
 async function checkBalance(): Promise<void> {
+    const PRIVATE_KEY = process.env.PRIVATE_KEY;
+    const FUNDER_ADDRESS = process.env.FUNDER_ADDRESS;
+    const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
     console.log("=".repeat(60));
     console.log("Polymarket 余额检查");
     console.log("=".repeat(60));
