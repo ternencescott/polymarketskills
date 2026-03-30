@@ -28,30 +28,33 @@ const USDC_E_ADDRESS = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174";
 // 2 = EOA 签名类型
 const SIGNATURE_TYPE = 2;
 
-if (!PRIVATE_KEY) {
-    console.error("❌ 错误: 请在 .env 文件中设置 PRIVATE_KEY");
-    console.error("   示例: PRIVATE_KEY=your_wallet_private_key_here");
-    process.exit(1);
-}
 
-if (!FUNDER_ADDRESS) {
-    console.error("❌ 错误: 请在 .env 文件中设置 FUNDER_ADDRESS");
-    console.error("   FUNDER_ADDRESS 是你的 Polymarket proxy wallet 地址 (Gnosis Safe)");
-    console.error("   可在 https://polymarket.com 个人设置页获取");
-    process.exit(1);
-}
+
+
 
 // 创建 ethers v6 provider 和 wallet (链上交互用)
 const provider = new ethers.JsonRpcProvider(POLYGON_RPC);
-const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 
-// 创建 v5 signer (仅给 ClobClient 用)
-const signer = new Wallet5(PRIVATE_KEY);
+
 
 // 创建已认证的 ClobClient (自动派生 API 凭证)
 // SDK 的 createOrDeriveApiKey() 会先尝试 create (POST)，失败后 fallback 到 derive (GET)。
 // create 失败时 SDK 内部 errorHandling 会无条件 console.error，这里临时屏蔽该噪音。
 async function getClobClient(): Promise<ClobClient> {
+    const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
+    if (!FUNDER_ADDRESS) {
+    console.error("❌ 错误: 请在 .env 文件中设置 FUNDER_ADDRESS");
+    console.error("   FUNDER_ADDRESS 是你的 Polymarket proxy wallet 地址 (Gnosis Safe)");
+    console.error("   可在 https://polymarket.com 个人设置页获取");
+    process.exit(1);
+    }
+    // 创建 v5 signer (仅给 ClobClient 用)
+    if (!PRIVATE_KEY) {
+    console.error("❌ 错误: 请在 .env 文件中设置 PRIVATE_KEY");
+    console.error("   示例: PRIVATE_KEY=your_wallet_private_key_here");
+    process.exit(1);
+    }
+    const signer = new Wallet5(PRIVATE_KEY);
     const originalError = console.error;
     console.error = (...args: any[]) => {
         if (typeof args[0] === "string" && args[0].includes("[CLOB Client] request error")) return;
@@ -68,14 +71,11 @@ async function getClobClient(): Promise<ClobClient> {
 export {
     getClobClient,
     provider,
-    wallet,
-    signer,
     POLYGON_RPC,
     CLOB_HOST,
     CHAIN_ID,
     GAMMA_API_HOST,
     USDC_E_ADDRESS,
-    FUNDER_ADDRESS,
     Side,
     OrderType,
     AssetType,
